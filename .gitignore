@@ -1,6 +1,0 @@
-.venv/
-.env
-__pycache__/
-*.pyc
-CONTEXT.md
-.claude/settings.local.json
