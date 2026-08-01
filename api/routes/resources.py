@@ -88,3 +88,47 @@ def create_resource():
     db.session.commit()
 
     return jsonify(_serialize_resource(resource)), 201
+
+# PATCH endpoint to update a resource
+@resources_bp.route("/resources/<resource_id>", methods=["PATCH"])
+def update_resource(resource_id):
+    resource = Resource.query.get(resource_id)
+    if resource is None:
+        return _error("resource_not_found", f"Resource with id {resource_id} does not exist", 404)
+
+    body = request.get_json(silent=True)
+    if body is None:
+        return _error("invalid_body", "Request body must be valid JSON", 400)
+
+    valid_types = ["ec2", "rds", "s3", "vm", "k8s_node", "load_balancer"]
+    if "type" in valid_types and body["type"] not in valid_types: # 
+        return _error("validation_error", f"type must be one of {valid_types}", 400)
+
+    updatable_fields = ["name", "type", "provider_region", "provider_sku", "owner", "is_active"]
+    for field in updatable_fields:
+        if field in body:
+            setattr(resource, field, body[field])
+
+    if "team" in body:
+        team = _get_or_create_team(body["team"])
+        resource.team_id = team.id
+
+    if "environment" in body:
+        environment = _get_or_create_environment(body["environment"])
+        resource.environment_id = environment.id
+
+    db.session.commit()
+    return jsonify(_serialize_resource(resource))
+
+
+@resources_bp.route("/resources/<resource_id>", methods=["DELETE"])
+def delete_resource(resource_id):
+    resource = Resource.query.get(resource_id)
+    if resource is None:
+        return _error("resource_not_found", f"Resource with id {resource_id} does not exist", 404)
+
+    resource.is_active = False
+    db.session.commit()
+
+    return "", 204
+    
