@@ -1,0 +1,35 @@
+services:
+  db:
+    image: postgres:16
+    container_name: infraledger-db
+    environment:
+      POSTGRES_USER: infraledger
+      POSTGRES_PASSWORD: infraledger
+      POSTGRES_DB: infraledger
+    ports:
+      - "5432:5432"
+    volumes:
+      - infraledger-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U infraledger"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: ./api
+    container_name: infraledger-api
+    ports:
+      - "5000:5000"
+    environment:
+      DATABASE_URL: postgresql://infraledger:infraledger@db:5432/infraledger
+      AWS_REGION: eu-west-1
+      AWS_PRICING_API_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  infraledger-db-data:
