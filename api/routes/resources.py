@@ -1,10 +1,11 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 
 
 from app.extensions import db
 from models.resources import Resource
 from models.team import Team
 from models.environment import Environment
+from services.pricing_service import calculate_monthly_cost
 
 resources_bp = Blueprint("resources", __name__)
 
@@ -86,6 +87,15 @@ def create_resource():
 
     db.session.add(resource)
     db.session.commit()
+
+    try:
+        calculate_monthly_cost(resource)
+    except ValueError as e:
+        # Resource was created successfully even if pricing failed —
+        # e.g. an unsupported type, or no pricing match from AWS.
+        # We don't want a pricing hiccup to block resource registration.
+        current_app.logger.warning(f"Could not calculate cost for resource {resource.id}: {e}")
+
 
     return jsonify(_serialize_resource(resource)), 201
 
