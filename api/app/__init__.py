@@ -1,4 +1,5 @@
 import os
+
 from flask import Flask
 
 from app.config import config_by_name
@@ -15,17 +16,18 @@ def create_app(config_name=None):
     migrate.init_app(app, db)
 
     with app.app_context():
-        import models # noqa: F401 - needed so Alembic can detect models changes
+        import models  # noqa: F401 - needed so Alembic can detect models changes
 
     register_blueprints(app)
 
     return app
 
+
 def register_blueprints(app):
-    from routes.health import health_bp
-    from routes.resources import resources_bp
     from routes.costs import costs_bp
+    from routes.health import health_bp
     from routes.insights import insights_bp
+    from routes.resources import resources_bp
 
     app.register_blueprint(health_bp)
     app.register_blueprint(resources_bp, url_prefix="/api/v1")

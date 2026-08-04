@@ -2,15 +2,16 @@
 Pricing service — wraps the AWS Pricing API via boto3.
 See docs/architecture.md -> Cost Calculation Flow.
 """
+
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import boto3
 from flask import current_app
 
 from app.extensions import db
-from models.price_cache import PriceCache
 from models.cost_entry import CostEntry
+from models.price_cache import PriceCache
 
 # The Pricing API's EC2 filters require the human-readable region name,
 # not the region code — a genuine AWS API inconsistency, not a design choice.
@@ -28,6 +29,7 @@ REGION_CODE_TO_LOCATION = {
 
 _pricing_client = boto3.client("pricing", region_name="us-east-1")
 
+
 def _extract_on_demand_price(price_list_item):
     """
     Given one raw PriceList item (already json.loads'd), pull out the
@@ -44,16 +46,19 @@ def _extract_on_demand_price(price_list_item):
     unit = dimension["unit"]
     return price_per_unit, unit
 
-def fetch_price_from_aws(service_code: str, sku: str, region:str):
+
+def fetch_price_from_aws(service_code: str, sku: str, region: str):
     """Calls the AWS Pricing API for EC2 on-demand Linux pricing and
     stores the result in PriceCache. Returns the PriceCache row."""
 
     location = REGION_CODE_TO_LOCATION.get(region)
     if location is None:
-        raise ValueError(f"No location mapping for region '{region}' — add it to REGION_CODE_TO_LOCATION")
+        raise ValueError(
+            f"No location mapping for region '{region}' — add it to REGION_CODE_TO_LOCATION"
+        )
 
     response = _pricing_client.get_products(
-        ServiceCode = service_code,
+        ServiceCode=service_code,
         Filters=[
             {"Type": "TERM_MATCH", "Field": "instanceType", "Value": sku},
             {"Type": "TERM_MATCH", "Field": "location", "Value": location},
@@ -81,17 +86,18 @@ def fetch_price_from_aws(service_code: str, sku: str, region:str):
 
     cache_entry.price_per_unit = price_per_unit
     cache_entry.unit = unit
-    cache_entry.fetched_at = datetime.utcnow()
+    cache_entry.fetched_at = datetime.now(timezone.utc)
 
     db.session.commit()
     return cache_entry
+
 
 def get_price(service_code: str, sku: str, region: str):
     """Cache-first price lookup. Returns a PriceCache row — fresh from
     cache if available, otherwise fetched live from AWS."""
 
     ttl_hours = current_app.config["PRICE_CACHE_TTL_HOURS"]
-    cutoff = datetime.utcnow() - timedelta(hours=ttl_hours)
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=ttl_hours)
 
     cache_entry = PriceCache.query.filter_by(
         service_code=service_code, sku=sku, region=region
@@ -102,12 +108,13 @@ def get_price(service_code: str, sku: str, region: str):
 
     return fetch_price_from_aws(service_code, sku, region)
 
+
 def calculate_monthly_cost(resource):
     """
     Given a Resource, fetch/ cache its price and create a CostEntry
     """
     # k8s_node is priced identically to ec2 — same underlying instance type,
-    
+
     service_code_map = {
         "ec2": "AmazonEC2",
         "k8s_node": "AmazonEC2",
@@ -119,7 +126,9 @@ def calculate_monthly_cost(resource):
     price = get_price(service_code, resource.provider_sku, resource.provider_region)
 
     if price.unit != "Hrs":
-        raise ValueError(f"Unexpected pricing unit '{price.unit}' — only hourly pricing is handled so far")
+        raise ValueError(
+            f"Unexpected pricing unit '{price.unit}' — only hourly pricing is handled so far"
+        )
 
     monthly_cost = price.price_per_unit * HOURS_PER_MONTH
 
@@ -131,4 +140,3 @@ def calculate_monthly_cost(resource):
     db.session.add(cost_entry)
     db.session.commit()
     return cost_entry
-

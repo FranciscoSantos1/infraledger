@@ -14,11 +14,14 @@ class Config:
     PRICE_CACHE_TTL_HOURS = int(os.environ.get("PRICE_CACHE_TTL_HOURS", "24"))
     INACTIVE_THRESHOLD_DAYS = int(os.environ.get("INACTIVE_THRESHOLD_DAYS", "14"))
 
+
 class DevelopmentConfig(Config):
     DEBUG = True
 
+
 class ProductionConfig(Config):
     DEBUG = False
+
 
 class TestingConfig(Config):
     TESTING = True
@@ -26,7 +29,7 @@ class TestingConfig(Config):
 
 
 config_by_name = {
-    "development" : DevelopmentConfig,
-    "testing" : TestingConfig,
-    "production" : ProductionConfig
+    "development": DevelopmentConfig,
+    "testing": TestingConfig,
+    "production": ProductionConfig,
 }

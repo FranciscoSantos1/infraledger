@@ -2,9 +2,9 @@ from flask import Blueprint, jsonify, request
 from sqlalchemy import func
 
 from models.cost_entry import CostEntry
+from models.environment import Environment
 from models.resources import Resource
 from models.team import Team
-from models.environment import Environment
 
 costs_bp = Blueprint("costs", __name__)
 
@@ -16,7 +16,9 @@ def _serialize_cost_entry(entry):
         "resource_name": entry.resource.name,
         "estimated_monthly_cost": float(entry.estimated_monthly_cost),
         "currency": entry.currency,
-        "calculated_at": entry.calculated_at.isoformat() if entry.calculated_at else None,
+        "calculated_at": entry.calculated_at.isoformat()
+        if entry.calculated_at
+        else None,
     }
 
 
@@ -43,6 +45,7 @@ def list_costs():
 @costs_bp.route("/costs/monthly", methods=["GET"])
 def monthly_costs():
     from app.extensions import db
+
     # Latest CostEntry per resource, summed — not every historical entry,
     # or a resource priced 5 times would get counted 5 times.
     latest_per_resource = (
@@ -54,57 +57,57 @@ def monthly_costs():
         .subquery()
     )
 
-    entries = (
-        CostEntry.query
-        .join(
-            latest_per_resource,
-            db.and_(
-                CostEntry.resource_id == latest_per_resource.c.resource_id,
-                CostEntry.calculated_at == latest_per_resource.c.max_calculated_at,
-            ),
-        )
-        .all()
-    )
+    entries = CostEntry.query.join(
+        latest_per_resource,
+        db.and_(
+            CostEntry.resource_id == latest_per_resource.c.resource_id,
+            CostEntry.calculated_at == latest_per_resource.c.max_calculated_at,
+        ),
+    ).all()
 
     total = sum(entry.estimated_monthly_cost for entry in entries)
 
-    return jsonify({
-        "total_estimated_monthly_cost": float(total),
-        "currency": "USD",
-    })
+    return jsonify(
+        {
+            "total_estimated_monthly_cost": float(total),
+            "currency": "USD",
+        }
+    )
 
 
 @costs_bp.route("/costs/team/<team>", methods=["GET"])
 def costs_by_team(team):
     entries = (
-        CostEntry.query
-        .join(Resource)
+        CostEntry.query.join(Resource)
         .join(Team)
         .filter(Team.name == team)
         .order_by(CostEntry.calculated_at.desc())
         .all()
     )
     total = sum(entry.estimated_monthly_cost for entry in entries)
-    return jsonify({
-        "team": team,
-        "total_estimated_monthly_cost": float(total),
-        "costs": [_serialize_cost_entry(e) for e in entries],
-    })
+    return jsonify(
+        {
+            "team": team,
+            "total_estimated_monthly_cost": float(total),
+            "costs": [_serialize_cost_entry(e) for e in entries],
+        }
+    )
 
 
 @costs_bp.route("/costs/environment/<environment>", methods=["GET"])
 def costs_by_environment(environment):
     entries = (
-        CostEntry.query
-        .join(Resource)
+        CostEntry.query.join(Resource)
         .join(Environment)
         .filter(Environment.name == environment)
         .order_by(CostEntry.calculated_at.desc())
         .all()
     )
     total = sum(entry.estimated_monthly_cost for entry in entries)
-    return jsonify({
-        "environment": environment,
-        "total_estimated_monthly_cost": float(total),
-        "costs": [_serialize_cost_entry(e) for e in entries],
-    })
+    return jsonify(
+        {
+            "environment": environment,
+            "total_estimated_monthly_cost": float(total),
+            "costs": [_serialize_cost_entry(e) for e in entries],
+        }
+    )

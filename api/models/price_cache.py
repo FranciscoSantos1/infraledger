@@ -18,5 +18,7 @@ class PriceCache(db.Model):
     fetched_at = db.Column(db.DateTime, server_default=db.func.now())
 
     __table_args__ = (
-        db.UniqueConstraint("service_code", "sku", "region", name="uq_price_cache_lookup"),
+        db.UniqueConstraint(
+            "service_code", "sku", "region", name="uq_price_cache_lookup"
+        ),
     )
