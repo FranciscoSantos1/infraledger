@@ -3,33 +3,33 @@ name: CI
 on:
   push:
     branches: [main, master]
-  pull_request: [main, master]
+  pull_request:
+    branches: [main, master]
 
 jobs:
-  # catch style/ syntax issues fast, before wasting time in slower steps
   lint:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checout@v4
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-        python-version: "3.12"
+          python-version: "3.12"
 
       - name: Install ruff
-      - run: pip install ruff
-    
+        run: pip install ruff
+
       - name: Run ruff
         run: ruff check api/
-  # will run the pytest tests
+
   test:
     runs-on: ubuntu-latest
     needs: lint
     steps:
       - name: Checkout code
-        uses: actions/checout@v4
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -46,6 +46,14 @@ jobs:
           TEST_DATABASE_URL: "sqlite:///:memory:"
         run: python -m pytest -v
 
-  
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
+      - name: Build Docker image
+        working-directory: api
+        run: docker build -t infraledger-api:ci .
 
