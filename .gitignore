@@ -7,8 +7,11 @@ venv/
 .pytest_cache/
 .DS_Store
 terraform/.terraform/
+*.terraform/
 terraform/*.tfstate
 terraform/*.tfstate.backup
+terraform/**/*.tfstate
+terraform/**/*.tfstate.backup
 ROADMAP.md
 docs/
 .claude/
