@@ -19,3 +19,5 @@ instance/
 .pytest_cache/
 CONTEXT.md
 help.txt
+*.tfvars
+!*.tfvars.example
