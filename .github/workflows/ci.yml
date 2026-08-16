@@ -65,6 +65,7 @@ jobs:
           with:
             role-to-assume: arn:aws:iam::564907679931:role/infraledger-github-actions
             aws-region: eu-west-1
+            role-skip-session-tagging: true
 
         - name: Login to ECR
           uses: aws-actions/amazon-ecr-login@v2
