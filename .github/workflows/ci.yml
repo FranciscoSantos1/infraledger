@@ -1,4 +1,7 @@
 name: CI
+permissions:
+  id-token: write
+  contents: read
 
 on:
   push:
@@ -48,13 +51,29 @@ jobs:
         run: python -m pytest -v
 
   build:
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      runs-on: ubuntu-latest
+      needs: test
+      permissions:
+        id-token: write
+        contents: read
+      steps:
+        - name: Checkout code
+          uses: actions/checkout@v4
 
-      - name: Build Docker image
-        working-directory: api
-        run: docker build -t infraledger-api:ci .
+        - name: Configure AWS credentials via OIDC
+          uses: aws-actions/configure-aws-credentials@v4
+          with:
+            role-to-assume: arn:aws:iam::564907679931:role/infraledger-github-actions
+            aws-region: eu-west-1
 
+        - name: Login to ECR
+          uses: aws-actions/amazon-ecr-login@v2
+
+        - name: Build and push Docker image
+          working-directory: api
+          env:
+            ECR_REPO: 564907679931.dkr.ecr.eu-west-1.amazonaws.com/infraledger-api
+          run: |
+            docker build -t $ECR_REPO:${{ github.sha }} -t $ECR_REPO:latest .
+            docker push $ECR_REPO:${{ github.sha }}
+            docker push $ECR_REPO:latest
