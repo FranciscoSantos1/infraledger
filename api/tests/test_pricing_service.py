@@ -1,9 +1,9 @@
-from unittest.mock import patch, MagicMock
 import json
-
-from models.price_cache import PriceCache
-from app.extensions import db
 from decimal import Decimal
+from unittest.mock import patch
+
+from app.extensions import db
+from models.price_cache import PriceCache
 
 SAMPLE_PRICE_LIST_ITEM = json.dumps({
     "terms": {
@@ -86,8 +86,7 @@ def test_fetch_price_from_aws_updates_existing_cache_entry(app):
 def test_fetch_price_from_aws_raises_on_no_results(app):
     from services.pricing_service import fetch_price_from_aws
 
-    with app.app_context():
-        with patch("services.pricing_service._pricing_client") as mock_client:
+    with app.app_context(), patch("services.pricing_service._pricing_client") as mock_client:
             mock_client.get_products.return_value = {"PriceList": []}
 
             try:
@@ -98,8 +97,9 @@ def test_fetch_price_from_aws_raises_on_no_results(app):
 
 
 def test_get_price_uses_fresh_cache_without_calling_aws(app):
-    from services.pricing_service import get_price
     from datetime import datetime, timezone
+
+    from services.pricing_service import get_price
 
     with app.app_context():
         cached = PriceCache(
@@ -121,10 +121,10 @@ def test_get_price_uses_fresh_cache_without_calling_aws(app):
 
 
 def test_calculate_monthly_cost_creates_cost_entry(app):
-    from services.pricing_service import calculate_monthly_cost
+    from models.environment import Environment
     from models.resources import Resource
     from models.team import Team
-    from models.environment import Environment
+    from services.pricing_service import calculate_monthly_cost
 
     with app.app_context():
         team = Team(name="checkout")
@@ -155,10 +155,10 @@ def test_calculate_monthly_cost_creates_cost_entry(app):
 
 
 def test_calculate_monthly_cost_raises_for_unsupported_type(app):
-    from services.pricing_service import calculate_monthly_cost
+    from models.environment import Environment
     from models.resources import Resource
     from models.team import Team
-    from models.environment import Environment
+    from services.pricing_service import calculate_monthly_cost
 
     with app.app_context():
         team = Team(name="checkout")

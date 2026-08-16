@@ -1,13 +1,10 @@
-import json
-from unittest.mock import patch
 from datetime import datetime, timedelta, timezone
 
-
 from app.extensions import db
-from models.team import Team
+from models.cost_entry import CostEntry
 from models.environment import Environment
 from models.resources import Resource
-from models.cost_entry import CostEntry
+from models.team import Team
 
 
 def _create_priced_resource(name, team_name, env_name, monthly_cost):
@@ -57,7 +54,6 @@ def test_list_costs_returns_created_entries(client, app):
     assert costs[0]["estimated_monthly_cost"] == 33.29
 
 
-from datetime import datetime, timedelta, timezone
 
 def test_monthly_costs_sums_latest_entry_per_resource(client, app):
     with app.app_context():
