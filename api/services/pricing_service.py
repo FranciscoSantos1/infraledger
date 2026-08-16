@@ -93,9 +93,6 @@ def fetch_price_from_aws(service_code: str, sku: str, region: str):
 
 
 def get_price(service_code: str, sku: str, region: str):
-    """Cache-first price lookup. Returns a PriceCache row — fresh from
-    cache if available, otherwise fetched live from AWS."""
-
     ttl_hours = current_app.config["PRICE_CACHE_TTL_HOURS"]
     cutoff = datetime.now(timezone.utc) - timedelta(hours=ttl_hours)
 
@@ -103,8 +100,12 @@ def get_price(service_code: str, sku: str, region: str):
         service_code=service_code, sku=sku, region=region
     ).first()
 
-    if cache_entry is not None and cache_entry.fetched_at >= cutoff:
-        return cache_entry
+    if cache_entry is not None:
+        fetched_at = cache_entry.fetched_at
+        if fetched_at.tzinfo is None:
+            fetched_at = fetched_at.replace(tzinfo=timezone.utc)
+        if fetched_at >= cutoff:
+            return cache_entry
 
     return fetch_price_from_aws(service_code, sku, region)
 

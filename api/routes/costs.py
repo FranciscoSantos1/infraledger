@@ -44,6 +44,11 @@ def list_costs():
 
 @costs_bp.route("/costs/monthly", methods=["GET"])
 def monthly_costs():
+    # KNOWN LIMITATION: "latest cost entry per resource" is determined by
+    # matching each resource's max(calculated_at) exactly. If two CostEntry
+    # rows for the same resource share an identical timestamp (e.g. two
+    # near-simultaneous pricing calculations), BOTH rows currently match and
+    # get summed, silently double-counting that resource's cost.
     from app.extensions import db
 
     # Latest CostEntry per resource, summed — not every historical entry,
