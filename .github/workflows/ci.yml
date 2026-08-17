@@ -93,6 +93,8 @@ jobs:
           script: |
             cd infraledger
             git pull
-            docker compose pull
-            docker compose up -d
-            docker compose exec -T api python -m flask --app wsgi db upgrade
+            aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin 564907679931.dkr.ecr.eu-west-1.amazonaws.com
+            docker compose -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml up -d
+            sleep 5
+            docker compose -f docker-compose.prod.yml exec -T api python -m flask --app wsgi db upgrade 

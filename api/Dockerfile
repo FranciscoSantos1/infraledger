@@ -24,4 +24,4 @@ USER appuser
 
 EXPOSE 5000
 
-CMD ["python", "-m", "flask", "--app", "wsgi", "run", "--host=0.0.0.0"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "3", "wsgi:app"]
