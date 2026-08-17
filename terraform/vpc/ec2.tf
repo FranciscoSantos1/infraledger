@@ -30,11 +30,39 @@ resource "aws_instance" "main" {
 
   user_data = <<-EOF
     #!/bin/bash
+    set -e 
+
     apt-get update -y
     apt-get install -y docker.io docker-compose-v2
     systemctl enable docker
     systemctl start docker
     usermod -aG docker ubuntu
+    
+    sudo -u ubuntu git clone https://github.com/FranciscoSantos1/infraledger.git /home/ubuntu/infraledger
+
+    cat > /home/ubuntu/infraledger/docker-compose.yml <<'COMPOSE_EOF'
+    services:
+      api:
+        image: ${aws_ecr_repository.api.repository_url}:latest
+        container_name: infraledger-api
+        restart: always
+        ports:
+          - "5000:5000"
+        environment:
+          DATABASE_URL: postgresql://infraledger:${random_password.db_password.result}@${aws_db_instance.main.endpoint}/infraledger
+          AWS_REGION: eu-west-1
+          AWS_PRICING_API_REGION: us-east-1
+    COMPOSE_EOF
+
+    chown ubuntu:ubuntu /home/ubuntu/infraledger/docker-compose.yml
+
+    aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin ${aws_ecr_repository.api.repository_url}
+
+    cd /home/ubuntu/infraledger
+    sudo -u ubuntu docker compose pull
+    sudo -u ubuntu docker compose up -d
+    sleep 10
+    sudo -u ubuntu docker compose exec -T api python -m flask --app wsgi db upgrade
   EOF
 
   tags = {
