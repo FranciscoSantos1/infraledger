@@ -39,6 +39,31 @@ resource "aws_iam_role_policy" "pricing_api_access" {
   })
 }
 
+resource "aws_iam_role_policy" "ecr_pull_access" {
+  name = "infraledger-ecr-pull-access"
+  role = aws_iam_role.ec2_pricing.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = "ecr:GetAuthorizationToken"
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage"
+        ]
+        Resource = aws_ecr_repository.api.arn
+      }
+    ]
+  })
+}
+
 resource "aws_iam_instance_profile" "ec2_pricing" {
   name = "infraledger-ec2-instance-profile"
   role = aws_iam_role.ec2_pricing.name
