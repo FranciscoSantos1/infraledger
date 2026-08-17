@@ -61,7 +61,7 @@ resource "aws_iam_role" "github_actions" {
             "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
           }
           StringLike = {
-            "token.actions.githubusercontent.com:sub" = "repo:FranciscoSantos1/infraledger:*"
+            "token.actions.githubusercontent.com:sub" = "repo:FranciscoSantos1@103313606/infraledger@1308803142:*"
           }
         }
       }
