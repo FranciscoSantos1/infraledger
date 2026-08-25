@@ -45,7 +45,13 @@ resource "aws_instance" "main" {
     ENV_EOF
     chown ubuntu:ubuntu /home/ubuntu/infraledger/.env
 
-    aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin ${aws_ecr_repository.api.repository_url}
+    for i in $(seq 1 10); do
+      if aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin ${aws_ecr_repository.api.repository_url}; then
+        break
+      fi
+      echo "ECR login attempt $i failed, retrying in 5s..."
+      sleep 5
+    done
 
     cd /home/ubuntu/infraledger
     sudo -u ubuntu docker compose -f docker-compose.prod.yml pull
