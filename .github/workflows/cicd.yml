@@ -1,4 +1,4 @@
-name: CI
+name: CI/CD
 permissions:
   id-token: write
   contents: read
@@ -96,6 +96,11 @@ jobs:
       
       - name:  Update kubeconfig
         run: aws eks update-kubeconfig --region eu-west-1 --name infraledger-cluster
+
+      - name: Apply Kubernetes manifests
+        run: |
+          kubectl apply -f kubernetes/deployment.yaml
+          kubectl apply -f kubernetes/service.yaml
 
       - name: Deploy new image
         run: |
