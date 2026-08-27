@@ -42,7 +42,7 @@ resource "aws_security_group" "web" {
 
 resource "aws_security_group" "database" {
   name        = "infraledger-db-sg"
-  description = "Allows Postgres from the web SG and EKS nodes"
+  description = "Allows Postgres only from the web security group"
   vpc_id      = aws_vpc.main.id
 
   ingress {
