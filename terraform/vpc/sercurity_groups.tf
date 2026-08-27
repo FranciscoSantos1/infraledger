@@ -42,15 +42,18 @@ resource "aws_security_group" "web" {
 
 resource "aws_security_group" "database" {
   name        = "infraledger-db-sg"
-  description = "Allows Postgres only from the web security group"
+  description = "Allows Postgres from the web SG and EKS nodes"
   vpc_id      = aws_vpc.main.id
 
   ingress {
-    description     = "Postgres from web SG only"
+    description     = "Postgres from web SG and EKS nodes"
     from_port       = 5432
     to_port         = 5432
     protocol        = "tcp"
-    security_groups = [aws_security_group.web.id]
+    security_groups = [
+      aws_security_group.web.id,
+      aws_eks_cluster.main.vpc_config[0].cluster_security_group_id,
+    ]
   }
 
   egress {
