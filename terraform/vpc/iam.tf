@@ -111,6 +111,50 @@ resource "aws_iam_role" "eks_node" {
   })
 }
 
+resource "aws_iam_role" "pod_pricing" {
+  name = "infraledger-pod-pricing-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Federated = aws_iam_openid_connect_provider.eks.arn
+        }
+        Action = "sts:AssumeRoleWithWebIdentity"
+        Condition = {
+          StringEquals = {
+            "${replace(aws_iam_openid_connect_provider.eks.url, "https://", "")}:sub" = "system:serviceaccount:default:infraledger-api-sa"
+            "${replace(aws_iam_openid_connect_provider.eks.url, "https://", "")}:aud" = "sts.amazonaws.com"
+          }
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "pod_pricing_access" {
+  name = "infraledger-pod-pricing-access"
+  role = aws_iam_role.pod_pricing.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "pricing:GetProducts",
+          "pricing:DescribeServices",
+          "pricing:GetAttributeValues"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+
 resource "aws_iam_role_policy" "eks_node_pricing_access" {
   name = "infraledger-eks-node-pricing-access"
   role = aws_iam_role.eks_node.id
@@ -149,4 +193,7 @@ resource "aws_iam_role_policy_attachment" "eks_node_ecr_policy" {
 output "github_actions_role_arn" {
   value = aws_iam_role.github_actions.arn
   
+}
+output "pod_pricing_role_arn" {
+  value = aws_iam_role.pod_pricing.arn
 }
