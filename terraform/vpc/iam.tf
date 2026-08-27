@@ -56,6 +56,23 @@ resource "aws_iam_role_policy" "github_actions_ecr" {
   })
 }
 
+# lets the role authenticate against the cluster from the CI run
+resource "aws_iam_role_policy" "github_actions_eks" {
+  name = "infraledger-github-actions-eks-deploy"
+  role = aws_iam_role.github_actions.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = "eks:DescribeCluster"
+        Resource = aws_eks_cluster.main.arn
+      }
+    ]
+  })
+}
+
 resource "aws_iam_role" "eks_cluster" {
   name = "infraledger-eks-cluster-role"
 
