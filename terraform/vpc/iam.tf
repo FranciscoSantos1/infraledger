@@ -154,27 +154,6 @@ resource "aws_iam_role_policy" "pod_pricing_access" {
   })
 }
 
-
-resource "aws_iam_role_policy" "eks_node_pricing_access" {
-  name = "infraledger-eks-node-pricing-access"
-  role = aws_iam_role.eks_node.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "pricing:GetProducts",
-          "pricing:DescribeServices",
-          "pricing:GetAttributeValues"
-        ]
-        Resource = "*"
-      }
-    ]
-  })
-}
-
 resource "aws_iam_role_policy_attachment" "eks_node_worker_policy" {
   role       = aws_iam_role.eks_node.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
