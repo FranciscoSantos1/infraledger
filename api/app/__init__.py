@@ -16,7 +16,7 @@ def create_app(config_name=None):
     app.config.from_object(config_by_name[config_name])
 
     db.init_app(app)
-    metrics = PrometheusMetrics(app)
+    PrometheusMetrics(app)
     migrate.init_app(app, db)
 
     with app.app_context():
