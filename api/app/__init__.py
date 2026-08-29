@@ -1,21 +1,22 @@
 import os
 
 from flask import Flask
+from prometheus_flask_exporter import PrometheusMetrics
 
 from app.config import config_by_name
 from app.extensions import db, migrate
-from prometheus_flask_exporter import PrometheusMetrics
 
-
-metrics = PrometheusMetrics(app)
 
 def create_app(config_name=None):
+
     app = Flask(__name__)
+    
 
     config_name = config_name or os.environ.get("FLASK_ENV", "development")
     app.config.from_object(config_by_name[config_name])
 
     db.init_app(app)
+    metrics = PrometheusMetrics(app)
     migrate.init_app(app, db)
 
     with app.app_context():
