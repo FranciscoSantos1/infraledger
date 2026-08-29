@@ -1,0 +1,14 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: infraledger-api
+  labels:
+    release: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: infraledger-api
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
