@@ -4,7 +4,10 @@ from flask import Flask
 
 from app.config import config_by_name
 from app.extensions import db, migrate
+from prometheus_flask_exporter import PrometheusMetrics
 
+
+metrics = PrometheusMetrics(app)
 
 def create_app(config_name=None):
     app = Flask(__name__)
